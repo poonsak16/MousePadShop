@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // กำหนด URL พื้นฐานสำหรับเชื่อมต่อ Backend API
 const API_BASE_URL = 'http://119.59.102.161:3035/api'; 
@@ -8,9 +10,9 @@ export default function App() {
   // ==========================================
   // 1. STATE MANAGEMENT (ตัวแปรสำหรับเก็บสถานะของระบบ)
   // ==========================================
-  const [authView, setAuthView] = useState('login'); // ควบคุมมุมมองหน้าล็อกอินหรือสมัครสมาชิก ('login' หรือ 'register')
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // ตรวจสอบว่าผู้ใช้เข้าสู่ระบบหรือยัง (true/false)
-  const [currentUsername, setCurrentUsername] = useState(''); // เก็บชื่อผู้ใช้งานปัจจุบันที่เข้าสู่ระบบ
+  const [authView, setAuthView] = useState('login'); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [currentUsername, setCurrentUsername] = useState(''); 
   
   // States สำหรับฟอร์ม Authentication (Login / Register)
   const [loginUser, setLoginUser] = useState('');
@@ -20,39 +22,38 @@ export default function App() {
   const [regConfirmPass, setRegConfirmPass] = useState('');
 
   // States สำหรับข้อมูลสินค้า (Products) และฟิลเตอร์ค้นหา
-  const [products, setProducts] = useState([]); // เก็บรายการสินค้าทั้งหมดจาก API
-  const [searchQuery, setSearchQuery] = useState(''); // คำค้นหา (Brand, Model, Type, Description)
-  const [minPrice, setMinPrice] = useState(''); // ราคาต่ำสุดสำหรับกรอง
-  const [maxPrice, setMaxPrice] = useState(''); // ราคาสูงสุดสำหรับกรอง
-  const [selectedCategory, setSelectedCategory] = useState('All'); // หมวดหมู่ที่เลือก (All, Speed, Control, Hybrid)
-  const [sortBy, setSortBy] = useState('price-asc'); // รูปแบบการจัดเรียงราคา ('price-asc' หรือ 'price-desc')
-  const [loading, setLoading] = useState(false); // สถานะกำลังโหลดข้อมูล (Spinner)
+  const [products, setProducts] = useState([]); 
+  const [searchQuery, setSearchQuery] = useState(''); 
+  const [minPrice, setMinPrice] = useState(''); 
+  const [maxPrice, setMaxPrice] = useState(''); 
+  const [selectedCategory, setSelectedCategory] = useState('All'); 
+  const [sortBy, setSortBy] = useState('price-asc'); 
+  const [loading, setLoading] = useState(false); 
   
-  const [currentView, setCurrentView] = useState('list'); // ควบคุมหน้าจอหลักระหว่าง 'list' (รายการ) และ 'form' (เพิ่ม/แก้ไข)
+  const [currentView, setCurrentView] = useState('list'); 
 
-  // States สำหรับฟอร์มเพิ่ม/แก้ไขสินค้า (Add / Edit Product Form)
-  const [isEditMode, setIsEditMode] = useState(false); // เช็คว่าเป็นโหมดแก้ไข (true) หรือโหมดเพิ่มใหม่ (false)
-  const [editId, setEditId] = useState(null); // เก็บ ID ของสินค้าที่กำลังแก้ไข
-  const [brand, setBrand] = useState(''); // แบรนด์หรือชื่อรุ่นสินค้า
-  const [description, setDescription] = useState(''); // รายละเอียดสินค้า
-  const [size, setSize] = useState('L'); // ขนาด (S, M, L, XL, XXL)
-  const [price, setPrice] = useState(''); // ราคา (THB)
-  const [type, setType] = useState('Speed'); // ประเภทผิวสัมผัส (Speed, Control, Hybrid)
-  const [value, setValue] = useState(''); // จำนวนสต็อกสินค้า
-  const [image, setImage] = useState(''); // URL รูปภาพสินค้าหรือ Base64
+  // States สำหรับฟอร์มเพิ่ม/แก้ไขสินค้า
+  const [isEditMode, setIsEditMode] = useState(false); 
+  const [editId, setEditId] = useState(null); 
+  const [brand, setBrand] = useState(''); 
+  const [description, setDescription] = useState(''); 
+  const [size, setSize] = useState('L'); 
+  const [price, setPrice] = useState(''); 
+  const [type, setType] = useState('Speed'); 
+  const [value, setValue] = useState(''); 
+  const [image, setImage] = useState(''); 
 
   // States สำหรับ Modal ยืนยันการลบสินค้า
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false); // ควบคุมการแสดงผล Modal ยืนยันลบ
-  const [itemToDelete, setItemToDelete] = useState(null); // เก็บข้อมูลสินค้าที่จะถูกลบ
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false); 
+  const [itemToDelete, setItemToDelete] = useState(null); 
 
   // States สำหรับระบบแบ่งหน้า (Pagination)
-  const [currentPage, setCurrentPage] = useState(1); // หน้าปัจจุบัน
-  const itemsPerPage = 6; // จำนวนสินค้าต่อ 1 หน้า
+  const [currentPage, setCurrentPage] = useState(1); 
+  const itemsPerPage = 4; // ปรับลดจำนวนรายการต่อหน้าให้เหมาะกับมือถือ
 
   // State สำหรับระบบแจ้งเตือน (Toast Notification)
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
-  // ฟังก์ชันแสดง Toast Notification (จะหายไปเองใน 3 วินาที)
   const showToast = (message, type = 'success') => {
     setToast({ visible: true, message, type });
     setTimeout(() => {
@@ -60,9 +61,6 @@ export default function App() {
     }, 3000);
   };
 
-  // ==========================================
-  // 2. USEEFFECT HOOKS (ดึงข้อมูลอัตโนมัติเมื่อเข้าสู่ระบบ)
-  // ==========================================
   useEffect(() => {
     if (isLoggedIn) {
       fetchProducts();
@@ -70,17 +68,15 @@ export default function App() {
   }, [isLoggedIn]);
 
   // ==========================================
-  // 3. API FUNCTIONS (ฟังก์ชันเชื่อมต่อ Backend)
+  // 2. API FUNCTIONS
   // ==========================================
-  
-  // ฟังก์ชันดึงข้อมูลสินค้าทั้งหมดจาก Server (ดึงมาทั้งหมดเพื่อให้ Client ทำการ Filter ได้ครอบคลุมรวมถึง Description)
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/products`);
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
-      setCurrentPage(1); 
+      setAccessibleCurrentPage(1); 
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
@@ -88,14 +84,15 @@ export default function App() {
     }
   };
 
-  // ฟังก์ชันสมัครสมาชิกผู้ใช้งานใหม่
+  const setAccessibleCurrentPage = (page) => setCurrentPage(page);
+
   const handleRegister = async () => {
     if (!regUser.trim() || !regPass.trim()) {
       showToast('Please fill in all required fields.', 'error');
       return;
     }
     if (regPass !== regConfirmPass) {
-      showToast('Passwords do not match. Please check again.', 'error');
+      showToast('Passwords do not match.', 'error');
       return;
     }
 
@@ -121,7 +118,6 @@ export default function App() {
     }
   };
 
-  // ฟังก์ชันเข้าสู่ระบบ
   const handleLogin = async () => {
     if (!loginUser.trim() || !loginPass.trim()) {
       showToast('Please enter username and password.', 'error');
@@ -148,7 +144,6 @@ export default function App() {
     }
   };
 
-  // ฟังก์ชันออกจากระบบ
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentUsername('');
@@ -157,7 +152,6 @@ export default function App() {
     setAuthView('login');
   };
 
-  // ฟังก์ชันแปลงไฟล์รูปภาพที่อัปโหลดจากเครื่องให้เป็น Base64
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -169,7 +163,6 @@ export default function App() {
     }
   };
 
-  // ฟังก์ชันบันทึกข้อมูลสินค้า (รองรับทั้งเพิ่มสินค้าใหม่ POST และแก้ไขสินค้า PUT)
   const handleSave = async () => {
     if (!brand.trim()) {
       showToast('Please enter brand/model name.', 'error');
@@ -211,13 +204,11 @@ export default function App() {
     }
   };
 
-  // เปิด Modal ยืนยันก่อนลบสินค้า
   const confirmDelete = (item) => {
     setItemToDelete(item);
     setDeleteModalVisible(true);
   };
 
-  // ฟังก์ชันสั่งลบสินค้าออกจากฐานข้อมูล (DELETE)
   const executeDelete = async () => {
     if (!itemToDelete) return;
     try {
@@ -236,7 +227,6 @@ export default function App() {
     }
   };
 
-  // เปิดฟอร์มสำหรับเพิ่มสินค้าใหม่
   const openAddForm = () => {
     setIsEditMode(false);
     setEditId(null);
@@ -250,7 +240,6 @@ export default function App() {
     setCurrentView('form');
   };
 
-  // เปิดฟอร์มสำหรับแก้ไขสินค้า (ดึงข้อมูลเดิมมาใส่ใน State)
   const openEditForm = (item) => {
     setIsEditMode(true);
     setEditId(item.id);
@@ -264,7 +253,6 @@ export default function App() {
     setCurrentView('form');
   };
 
-  // ฟังก์ชันรีเซ็ตค่าตัวกรองทั้งหมดกลับค่าเริ่มต้น
   const handleResetFilters = () => {
     setSearchQuery('');
     setMinPrice('');
@@ -275,7 +263,7 @@ export default function App() {
   };
 
   // ==========================================
-  // 4. FILTERING & SORTING LOGIC (ระบบกรองและจัดเรียงข้อมูล ครอบคลุม Description)
+  // 3. FILTERING & SORTING LOGIC
   // ==========================================
   const filteredProducts = products.filter(item => {
     const cat = item.category || item.type || 'Speed';
@@ -286,7 +274,6 @@ export default function App() {
     const max = maxPrice !== '' ? parseFloat(maxPrice) : Infinity;
     const matchPrice = itemPriceNum >= min && itemPriceNum <= max;
 
-    // รองรับการค้นหาครอบคลุม Brand, Name, Category, Sizes, OrderName และ Description อย่างสมบูรณ์
     const query = searchQuery.toLowerCase().trim();
     const matchSearch = query === '' || 
       (item.brand && item.brand.toLowerCase().includes(query)) ||
@@ -306,46 +293,41 @@ export default function App() {
     return 0; 
   });
 
-  // คำนวณสถิติต่างๆ สำหรับ Dashboard Cards
-  const totalItems = products.length;
   const totalStock = products.reduce((acc, curr) => acc + (parseInt(curr.stock ?? curr.value) || 0), 0);
   const categoriesCount = new Set(products.map(p => p.category || p.type)).size;
-  
   const totalInventoryValue = products.reduce((acc, curr) => {
     const priceNum = parseFloat(String(curr.productCode || '0').replace(/[^0-9.]/g, '')) || 0;
     const stockNum = parseInt(curr.stock ?? curr.value) || 0;
     return acc + (priceNum * stockNum);
   }, 0);
 
-  // การแบ่งหน้า Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
 
-  // ธีมสี White & Gold Luxury (ขาว & ทอง)
   const theme = {
-    bg: '#FAFAFA',           
-    card: '#FFFFFF',         
-    text: '#1A1A1A',         
-    subText: '#6B7280',      
-    border: '#E5E7EB',       
-    inputBg: '#F9FAFB',      
-    headerBg: '#FFFFFF',     
-    gold: '#D4AF37',         
-    goldLight: '#FDF8EC',    
+    bg: '#FAFAFA',         
+    card: '#FFFFFF',        
+    text: '#1A1A1A',        
+    subText: '#6B7280',     
+    border: '#E5E7EB',      
+    inputBg: '#F9FAFB',     
+    headerBg: '#FFFFFF',    
+    gold: '#D4AF37',        
+    goldLight: '#FDF8EC',   
     goldBorder: '#E6D59C'
   };
 
   // ==========================================
-  // 5. RENDER VIEWS (ส่วนแสดงผล UI ตามเงื่อนไข)
+  // 4. RENDER VIEWS (MOBILE OPTIMIZED)
   // ==========================================
 
-  // --- 5.1 หน้าจอ Login / Register ---
+  // --- Login / Register ---
   if (!isLoggedIn) {
     if (authView === 'register') {
       return (
-        <View style={[styles.loginContainer, {backgroundColor: theme.bg}]}>
+        <ScrollView contentContainerStyle={[styles.loginContainer, {backgroundColor: theme.bg}]}>
           {toast.visible && (
             <View style={[styles.toast, toast.type === 'error' ? styles.toastError : styles.toastSuccess]}>
               <Text style={styles.toastText}>{toast.message}</Text>
@@ -372,12 +354,12 @@ export default function App() {
               <Text style={[styles.switchButtonText, {color: theme.gold}]}>Already have an account? Sign In</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       );
     }
 
     return (
-      <View style={[styles.loginContainer, {backgroundColor: theme.bg}]}>
+      <ScrollView contentContainerStyle={[styles.loginContainer, {backgroundColor: theme.bg}]}>
         {toast.visible && (
           <View style={[styles.toast, toast.type === 'error' ? styles.toastError : styles.toastSuccess]}>
             <Text style={styles.toastText}>{toast.message}</Text>
@@ -401,32 +383,32 @@ export default function App() {
             <Text style={[styles.switchButtonText, {color: theme.gold}]}>No account? Register here</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
-  // --- 5.2 หน้าจอ Add / Edit Product Form ---
+  // --- Add / Edit Product Form ---
   if (currentView === 'form') {
     return (
-      <ScrollView style={[styles.container, {backgroundColor: theme.bg}]} contentContainerStyle={{padding: 24}}>
+      <ScrollView style={[styles.container, {backgroundColor: theme.bg}]} contentContainerStyle={{padding: 16, paddingBottom: 40}}>
         {toast.visible && (
           <View style={[styles.toast, toast.type === 'error' ? styles.toastError : styles.toastSuccess]}>
             <Text style={styles.toastText}>{toast.message}</Text>
           </View>
         )}
-        <View style={[styles.header, {backgroundColor: theme.headerBg, borderColor: theme.border}]}>
-          <Text style={[styles.headerTitle, {color: theme.text}]}>{isEditMode ? '◆ EDIT MOUSEPAD SPEC' : ' ADD NEW PRODUCT '}</Text>
+        <View style={[styles.headerMobile, {backgroundColor: theme.headerBg, borderColor: theme.border}]}>
+          <Text style={[styles.headerTitleMobile, {color: theme.text}]}>{isEditMode ? 'EDIT SPEC' : 'ADD PRODUCT'}</Text>
           <TouchableOpacity style={[styles.cancelButton, {borderColor: theme.border}]} onPress={() => setCurrentView('list')}>
             <Text style={styles.cancelButtonText}>✕ CANCEL</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.formCard, {backgroundColor: theme.card, borderColor: theme.goldBorder}]}>
+        <View style={[styles.formCardMobile, {backgroundColor: theme.card, borderColor: theme.goldBorder}]}>
           <Text style={[styles.label, {color: theme.subText}]}>Mousepad Brand / Model *</Text>
-          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., Artisan FX Zero, Razer Gigantus V2" placeholderTextColor="#9CA3AF" value={brand} onChangeText={setBrand} />
+          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., Artisan FX Zero" placeholderTextColor="#9CA3AF" value={brand} onChangeText={setBrand} />
 
           <Text style={[styles.label, {color: theme.subText}]}>Description / Features</Text>
-          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., Smooth control surface, stitched edges" placeholderTextColor="#9CA3AF" value={description} onChangeText={setDescription} />
+          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., Smooth control surface" placeholderTextColor="#9CA3AF" value={description} onChangeText={setDescription} />
 
           <Text style={[styles.label, {color: theme.subText}]}>Surface Size</Text>
           <View style={styles.categoryPickerRow}>
@@ -442,14 +424,14 @@ export default function App() {
           </View>
 
           <Text style={[styles.label, {color: theme.subText}]}>Price (THB)</Text>
-          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., 1,290 THB" placeholderTextColor="#9CA3AF" value={price} onChangeText={setPrice} />
+          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., 1290" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={price} onChangeText={setPrice} />
 
           <Text style={[styles.label, {color: theme.subText}]}>Glide Type</Text>
           <View style={styles.categoryPickerRow}>
             {['Speed', 'Control', 'Hybrid'].map((cat) => (
               <TouchableOpacity 
                 key={cat} 
-                style={[styles.catChip, {backgroundColor: theme.inputBg, borderColor: theme.border}, type === cat && {backgroundColor: theme.goldLight, borderColor: theme.gold}]} 
+                style={[styles.catChipMobile, {backgroundColor: theme.inputBg, borderColor: theme.border}, type === cat && {backgroundColor: theme.goldLight, borderColor: theme.gold}]} 
                 onPress={() => setType(cat)}
               >
                 <Text style={[styles.catChipText, {color: theme.subText}, type === cat && {color: theme.gold, fontWeight: '900'}]}>{cat}</Text>
@@ -460,8 +442,8 @@ export default function App() {
           <Text style={[styles.label, {color: theme.subText}]}>Stock Quantity</Text>
           <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="e.g., 50" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={value} onChangeText={setValue} />
 
-          <Text style={[styles.label, {color: theme.subText}]}>Mousepad Image URL</Text>
-          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="Paste image URL or choose file below" placeholderTextColor="#9CA3AF" value={image} onChangeText={setImage} />
+          <Text style={[styles.label, {color: theme.subText}]}>Image URL</Text>
+          <TextInput style={[styles.input, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} placeholder="Paste image URL" placeholderTextColor="#9CA3AF" value={image} onChangeText={setImage} />
 
           {Platform.OS === 'web' && (
             <View style={{ marginBottom: 16 }}>
@@ -482,14 +464,14 @@ export default function App() {
           ) : null}
 
           <TouchableOpacity style={[styles.saveButton, {backgroundColor: theme.gold}]} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>{isEditMode ? '◆ SAVE CHANGES' : '◆ SAVE MOUSEPAD'}</Text>
+            <Text style={styles.saveButtonText}>{isEditMode ? 'SAVE CHANGES' : 'SAVE MOUSEPAD'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     );
   }
 
-  // --- 5.3 หน้าจอหลัก Dashboard & Product Grid ---
+  // --- Main Mobile Dashboard & Product List ---
   return (
     <View style={[styles.container, {backgroundColor: theme.bg}]}>
       {toast.visible && (
@@ -502,8 +484,8 @@ export default function App() {
       {deleteModalVisible && (
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, {backgroundColor: theme.card, borderColor: theme.goldBorder}]}>
-            <Text style={[styles.modalTitle, {color: theme.text}]}>◆ CONFIRM DELETION</Text>
-            <Text style={[styles.modalDesc, {color: theme.subText}]}>Are you sure you want to remove "{itemToDelete?.brand || itemToDelete?.name}" from warehouse?</Text>
+            <Text style={[styles.modalTitle, {color: theme.text}]}>CONFIRM DELETION</Text>
+            <Text style={[styles.modalDesc, {color: theme.subText}]}>Are you sure you want to remove "{itemToDelete?.brand || itemToDelete?.name}"?</Text>
             <View style={styles.modalActionRow}>
               <TouchableOpacity style={[styles.modalCancelBtn, {borderColor: theme.border}]} onPress={() => setDeleteModalVisible(false)}>
                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -516,59 +498,52 @@ export default function App() {
         </View>
       )}
 
-      {/* Header ของระบบ */}
-      <View style={[styles.header, {backgroundColor: theme.headerBg, borderColor: theme.border}]}>
-        <View>
-          <Text style={[styles.storeTag, {color: theme.gold}]}>ELITE GAMING MOUSEPAD WAREHOUSE</Text>
-          <Text style={[styles.headerTitle, {color: theme.text}]}>Gaming Mousepad Inventory</Text>
+      {/* Header มือถือ */}
+      <View style={[styles.headerMobile, {backgroundColor: theme.headerBg, borderColor: theme.border}]}>
+        <View style={{flex: 1}}>
+          <Text style={[styles.storeTagMobile, {color: theme.gold}]}>ELITE WAREHOUSE</Text>
+          <Text style={[styles.headerTitleMobile, {color: theme.text}]} numberOfLines={1}>Gaming Mousepad</Text>
         </View>
-        <View style={{flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap'}}>
-          <View style={[styles.userBadgeHeader, {backgroundColor: theme.inputBg, borderColor: theme.border}]}>
-            <Text style={[styles.userBadgeText, {color: theme.text}]}>◆ {currentUsername} <Text style={{color: theme.gold}}>[ADMIN]</Text></Text>
-          </View>
-
-          <TouchableOpacity style={[styles.addButton, {backgroundColor: theme.gold}]} onPress={openAddForm}>
-            <Text style={styles.addButtonText}>+ Add Product</Text>
+        <View style={styles.headerRightRow}>
+          <TouchableOpacity style={[styles.addButtonMobile, {backgroundColor: theme.gold}]} onPress={openAddForm}>
+            <Text style={styles.addButtonText}>+ Add</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.logoutButton, {backgroundColor: theme.inputBg, borderColor: theme.border}]} onPress={handleLogout}>
+          <TouchableOpacity style={[styles.logoutButtonMobile, {backgroundColor: theme.inputBg, borderColor: theme.border}]} onPress={handleLogout}>
             <Text style={[styles.logoutButtonText, {color: theme.subText}]}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{padding: 24}}>
-        {/* ส่วนแสดงสถิติลอย (Dashboard Stats Cards) */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, {backgroundColor: theme.card, borderColor: theme.border}]}>
-            <Text style={[styles.statLabel, {color: theme.subText}]}>Total Items</Text>
-            <Text style={[styles.statValue, {color: theme.text}]}>{products.length} <Text style={styles.statUnit}>items</Text></Text>
+      <ScrollView contentContainerStyle={{padding: 16, paddingBottom: 40}}>
+        {/* สถิติแบบการ์ดแถวเดียว เลื่อนขวาได้หรือจัดเรียงแบบ 2x2 */}
+        <View style={styles.statsContainerMobile}>
+          <View style={[styles.statCardMobile, {backgroundColor: theme.card, borderColor: theme.border}]}>
+            <Text style={[styles.statLabel, {color: theme.subText}]}>Items</Text>
+            <Text style={[styles.statValue, {color: theme.text}]}>{products.length}</Text>
           </View>
-          <View style={[styles.statCard, {backgroundColor: theme.card, borderColor: theme.border}]}>
-            <Text style={[styles.statLabel, {color: theme.subText}]}>Total Stock</Text>
-            <Text style={[styles.statValue, {color: theme.text}]}>{totalStock} <Text style={styles.statUnit}>pcs</Text></Text>
+          <View style={[styles.statCardMobile, {backgroundColor: theme.card, borderColor: theme.border}]}>
+            <Text style={[styles.statLabel, {color: theme.subText}]}>Stock</Text>
+            <Text style={[styles.statValue, {color: theme.text}]}>{totalStock}</Text>
           </View>
-          <View style={[styles.statCard, {backgroundColor: theme.card, borderColor: theme.border}]}>
-            <Text style={[styles.statLabel, {color: theme.subText}]}>Categories</Text>
-            <Text style={[styles.statValue, {color: theme.text}]}>{categoriesCount} <Text style={styles.statUnit}>groups</Text></Text>
-          </View>
-          <View style={[styles.statCard, {backgroundColor: theme.card, borderColor: theme.border}]}>
-            <Text style={[styles.statLabel, {color: theme.subText}]}>Inventory Value</Text>
-            <Text style={[styles.statValue, {color: theme.gold}]}>{totalInventoryValue.toLocaleString()} <Text style={styles.statUnit}>THB</Text></Text>
+          <View style={[styles.statCardMobile, {backgroundColor: theme.card, borderColor: theme.border}]}>
+            <Text style={[styles.statLabel, {color: theme.subText}]}>Value</Text>
+            <Text style={[styles.statValue, {color: theme.gold}]} numberOfLines={1}>฿{totalInventoryValue.toLocaleString()}</Text>
           </View>
         </View>
         
-        {/* แถบค้นหา (Search) และตัวกรองราคา/หมวดหมู่ */}
+        {/* ช่องค้นหา & ตัวกรอง */}
         <View style={[styles.filterSectionCard, {backgroundColor: theme.card, borderColor: theme.border}]}>
-          <View style={styles.searchRow}>
+          <TextInput 
+            style={[styles.searchInputMobile, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} 
+            placeholderTextColor="#9CA3AF" 
+            placeholder="🔍 Search brand, model..." 
+            value={searchQuery} 
+            onChangeText={setSearchQuery} 
+          />
+          
+          <View style={styles.priceFilterRow}>
             <TextInput 
-              style={[styles.searchInput, {flex: 1, backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} 
-              placeholderTextColor="#9CA3AF" 
-              placeholder="🔍 Search brand, model, description..." 
-              value={searchQuery} 
-              onChangeText={setSearchQuery} 
-            />
-            <TextInput 
-              style={[styles.priceInputSmall, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} 
+              style={[styles.priceInputMobile, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} 
               placeholderTextColor="#9CA3AF" 
               placeholder="Min ฿" 
               keyboardType="numeric"
@@ -576,49 +551,49 @@ export default function App() {
               onChangeText={setMinPrice} 
             />
             <TextInput 
-              style={[styles.priceInputSmall, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} 
+              style={[styles.priceInputMobile, {backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border}]} 
               placeholderTextColor="#9CA3AF" 
               placeholder="Max ฿" 
               keyboardType="numeric"
               value={maxPrice} 
               onChangeText={setMaxPrice} 
             />
-            <TouchableOpacity style={[styles.resetButton, {backgroundColor: theme.inputBg, borderColor: theme.border}]} onPress={handleResetFilters}>
-              <Text style={[styles.resetButtonText, {color: theme.text}]}>🗑️ Reset</Text>
+            <TouchableOpacity style={[styles.resetButtonMobile, {backgroundColor: theme.inputBg, borderColor: theme.border}]} onPress={handleResetFilters}>
+              <Text style={[styles.resetButtonText, {color: theme.text}]}>Reset</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.filterAndSortRow}>
-            <View style={styles.filterBar}>
-              {['All', 'Speed', 'Control', 'Hybrid'].map((cat) => (
-                <TouchableOpacity 
-                  key={cat} 
-                  style={[styles.filterChip, {backgroundColor: theme.inputBg, borderColor: theme.border}, selectedCategory === cat && {backgroundColor: theme.goldLight, borderColor: theme.gold}]} 
-                  onPress={() => {
-                    setSelectedCategory(cat);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <Text style={[styles.filterChipText, {color: theme.subText}, selectedCategory === cat && {color: theme.gold, fontWeight: '900'}]}>{cat}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          {/* หมวดหมู่ */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterBarMobile}>
+            {['All', 'Speed', 'Control', 'Hybrid'].map((cat) => (
+              <TouchableOpacity 
+                key={cat} 
+                style={[styles.filterChip, {backgroundColor: theme.inputBg, borderColor: theme.border}, selectedCategory === cat && {backgroundColor: theme.goldLight, borderColor: theme.gold}]} 
+                onPress={() => {
+                  setSelectedCategory(cat);
+                  setCurrentPage(1);
+                }}
+              >
+                <Text style={[styles.filterChipText, {color: theme.subText}, selectedCategory === cat && {color: theme.gold, fontWeight: '900'}]}>{cat}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-            <View style={styles.sortBar}>
-              {[
-                { key: 'price-asc', label: 'Price: Low ➔ High' },
-                { key: 'price-desc', label: 'Price: High ➔ Low' }
-              ].map((s) => (
-                <TouchableOpacity 
-                  key={s.key} 
-                  style={[styles.sortChip, {backgroundColor: theme.inputBg, borderColor: theme.border}, sortBy === s.key && {backgroundColor: theme.goldLight, borderColor: theme.gold}]} 
-                  onPress={() => setSortBy(s.key)}
-                >
-                  <Text style={[styles.sortChipText, {color: theme.subText}, sortBy === s.key && {color: theme.gold, fontWeight: '900'}]}>{s.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          {/* จัดเรียง */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortBarMobile}>
+            {[
+              { key: 'price-asc', label: 'Price: Low ➔ High' },
+              { key: 'price-desc', label: 'Price: High ➔ Low' }
+            ].map((s) => (
+              <TouchableOpacity 
+                key={s.key} 
+                style={[styles.sortChip, {backgroundColor: theme.inputBg, borderColor: theme.border}, sortBy === s.key && {backgroundColor: theme.goldLight, borderColor: theme.gold}]} 
+                onPress={() => setSortBy(s.key)}
+              >
+                <Text style={[styles.sortChipText, {color: theme.subText}, sortBy === s.key && {color: theme.gold, fontWeight: '900'}]}>{s.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
         
         {loading ? (
@@ -629,32 +604,30 @@ export default function App() {
               <View style={styles.emptyContainer}>
                 <Text style={[styles.emptyEmoji, {color: theme.gold}]}>◆</Text>
                 <Text style={[styles.emptyTitle, {color: theme.text}]}>No Mousepads Found</Text>
-                <Text style={[styles.emptySubtitle, {color: theme.subText}]}>Try adjusting your search criteria or resetting filters.</Text>
+                <Text style={[styles.emptySubtitle, {color: theme.subText}]}>Try adjusting your search criteria.</Text>
                 <TouchableOpacity style={[styles.emptyResetBtn, {backgroundColor: theme.gold}]} onPress={handleResetFilters}>
                   <Text style={styles.emptyResetText}>Reset All Filters</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                {/* --- แสดงรายการสินค้า (Product Grid Cards) --- */}
-                <View style={styles.gridContainer}>
+                {/* --- รายการสินค้าแบบ 1 คอลัมน์เต็มจอโทรศัพท์ (Mobile Feed List) --- */}
+                <View style={styles.gridContainerMobile}>
                   {currentProducts.map((item) => {
                     const currentStock = parseInt(item.stock ?? item.value) || 0;
-                    const isLowStock = currentStock <= 3; // แจ้งเตือนเมื่อสินค้าใกล้หมด (เหลือน้อยกว่าหรือเท่ากับ 3 ชิ้น)
+                    const isLowStock = currentStock <= 3;
 
                     return (
-                      <View key={item.id} style={[styles.card, {backgroundColor: theme.card, borderColor: theme.border}]}>
-                        {/* กรอบรูปภาพสินค้าแนวตั้งแบบ Contain ป้องกันรูปถูกตัด */}
-                        <View style={[styles.imageWrapper, {backgroundColor: theme.inputBg, borderColor: theme.border}]}>
+                      <View key={item.id} style={[styles.cardMobile, {backgroundColor: theme.card, borderColor: theme.border}]}>
+                        <View style={[styles.imageWrapperMobile, {backgroundColor: theme.inputBg, borderColor: theme.border}]}>
                           {item.image ? (
                             <Image source={{uri: item.image}} style={styles.cardImage} resizeMode="contain" />
                           ) : (
-                            <Text style={{color: '#9CA3AF', fontSize: 11, fontWeight: 'bold', letterSpacing: 1}}>NO IMAGE</Text>
+                            <Text style={{color: '#9CA3AF', fontSize: 10, fontWeight: 'bold'}}>NO IMAGE</Text>
                           )}
                         </View>
 
-                        {/* รายละเอียดข้อมูลสินค้า */}
-                        <View style={styles.cardBody}>
+                        <View style={styles.cardBodyMobile}>
                           <View>
                             <View style={styles.badgeRow}>
                               <Text style={[styles.categoryBadge, {backgroundColor: theme.goldLight, borderColor: theme.goldBorder, color: theme.gold}]}>{item.category || item.type || 'Speed'}</Text>
@@ -662,13 +635,12 @@ export default function App() {
                                 {isLowStock ? `⚠️ Stock: ${currentStock}` : `Stock: ${currentStock}`}
                               </Text>
                             </View>
-                            <Text style={[styles.cardTitle, {color: theme.text}]} numberOfLines={1}>{item.brand || item.name}</Text>
-                            <Text style={[styles.cardSub, {color: theme.subText}]}>Size: {item.sizes || '-'} • <Text style={{fontWeight: '900', color: theme.gold}}>{item.productCode || '0'} THB</Text></Text>
-                            <Text style={[styles.cardDesc, {color: theme.subText}]} numberOfLines={1}>{item.orderName || item.description || ''}</Text>
+                            <Text style={[styles.cardTitleMobile, {color: theme.text}]} numberOfLines={1}>{item.brand || item.name}</Text>
+                            <Text style={[styles.cardSubMobile, {color: theme.subText}]}>Size: {item.sizes || '-'} • <Text style={{fontWeight: '900', color: theme.gold}}>{item.productCode || '0'} THB</Text></Text>
+                            <Text style={[styles.cardDescMobile, {color: theme.subText}]} numberOfLines={2}>{item.orderName || item.description || ''}</Text>
                           </View>
                           
-                          {/* ปุ่มแก้ไขและลบสินค้า */}
-                          <View style={styles.actionRow}>
+                          <View style={styles.actionRowMobile}>
                             <TouchableOpacity style={[styles.editBtn, {backgroundColor: theme.inputBg, borderColor: theme.border}]} onPress={() => openEditForm(item)}>
                               <Text style={[styles.actionText, {color: theme.text}]}>Edit</Text>
                             </TouchableOpacity>
@@ -682,7 +654,7 @@ export default function App() {
                   })}
                 </View>
 
-                {/* --- ระบบแบ่งหน้า (Pagination Controls) --- */}
+                {/* --- Pagination --- */}
                 <View style={styles.paginationContainer}>
                   <TouchableOpacity 
                     style={[styles.pageButton, {backgroundColor: theme.card, borderColor: theme.border}, currentPage === 1 && styles.pageButtonDisabled]} 
@@ -693,7 +665,7 @@ export default function App() {
                   </TouchableOpacity>
 
                   <Text style={[styles.pageIndicator, {color: theme.text}]}>
-                    Page {currentPage} of {totalPages}
+                    {currentPage} / {totalPages}
                   </Text>
 
                   <TouchableOpacity 
@@ -714,92 +686,102 @@ export default function App() {
 }
 
 // ==========================================
-// 6. STYLESHEET (การตกแต่งหน้าตาด้วย CSS-in-JS)
+// 5. STYLESHEET (MOBILE SCALED)
 // ==========================================
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  toast: { position: 'absolute', top: 20, alignSelf: 'center', zIndex: 9999, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
+  toast: { position: 'absolute', top: 40, alignSelf: 'center', zIndex: 9999, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
   toastSuccess: { backgroundColor: '#1A1A1A' },
   toastError: { backgroundColor: '#DC2626' },
-  toastText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 },
-  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 99999, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalCard: { padding: 32, borderRadius: 12, width: '100%', maxWidth: 420, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: 1 },
-  modalDesc: { fontSize: 13, marginBottom: 24, textAlign: 'center', lineHeight: 22 },
-  modalActionRow: { flexDirection: 'row', gap: 12 },
-  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 6, alignItems: 'center', borderWidth: 1 },
-  modalCancelText: { color: '#6B7280', fontWeight: 'bold', fontSize: 12 },
-  modalConfirmBtn: { flex: 1, backgroundColor: '#DC2626', paddingVertical: 12, borderRadius: 6, alignItems: 'center' },
-  modalConfirmText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },
-  loginContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  loginCard: { padding: 40, borderRadius: 12, borderWidth: 1, width: '100%', maxWidth: 420, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 24 },
-  loginTag: { fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 8, textAlign: 'center' },
-  loginTitle: { fontSize: 24, fontWeight: '900', marginBottom: 24, textAlign: 'center', letterSpacing: 0.5 },
-  switchButton: { marginTop: 20, alignItems: 'center' },
-  switchButtonText: { fontSize: 13, fontWeight: '700' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18, borderBottomWidth: 1 },
-  storeTag: { fontSize: 9, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
-  headerTitle: { fontSize: 20, fontWeight: '900', letterSpacing: 0.5 },
-  userBadgeHeader: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, borderWidth: 1 },
-  userBadgeText: { fontSize: 11, fontWeight: 'bold' },
-  addButton: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
-  addButtonText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12 },
-  logoutButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 6, borderWidth: 1 },
-  logoutButtonText: { fontWeight: '900', fontSize: 11 },
-  cancelButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, borderWidth: 1 },
-  cancelButtonText: { color: '#6B7280', fontWeight: 'bold', fontSize: 11 },
-  statsContainer: { flexDirection: 'row', gap: 12, marginBottom: 16, flexWrap: 'wrap' },
-  statCard: { flex: 1, minWidth: 200, padding: 16, borderRadius: 10, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4 },
-  statLabel: { fontSize: 10, fontWeight: 'bold', marginBottom: 6, letterSpacing: 0.5 },
-  statValue: { fontSize: 18, fontWeight: '900' },
-  statUnit: { fontSize: 11, fontWeight: 'normal', color: '#9CA3AF' },
-  filterSectionCard: { padding: 16, borderRadius: 10, borderWidth: 1, marginBottom: 20, gap: 12 },
-  searchRow: { flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-  searchInput: { padding: 11, borderRadius: 8, fontSize: 13, borderWidth: 1, minWidth: 220 },
-  priceInputSmall: { width: 90, padding: 11, borderRadius: 8, fontSize: 12, borderWidth: 1 },
-  resetButton: { paddingHorizontal: 14, paddingVertical: 11, justifyContent: 'center', borderRadius: 8, borderWidth: 1 },
+  toastText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },
+  
+  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 99999, justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCard: { padding: 24, borderRadius: 12, width: '100%', maxWidth: 340, borderWidth: 1 },
+  modalTitle: { fontSize: 16, fontWeight: '900', marginBottom: 8, textAlign: 'center' },
+  modalDesc: { fontSize: 12, marginBottom: 20, textAlign: 'center', lineHeight: 20 },
+  modalActionRow: { flexDirection: 'row', gap: 10 },
+  modalCancelBtn: { flex: 1, paddingVertical: 10, borderRadius: 6, alignItems: 'center', borderWidth: 1 },
+  modalCancelText: { color: '#6B7280', fontWeight: 'bold', fontSize: 11 },
+  modalConfirmBtn: { flex: 1, backgroundColor: '#DC2626', paddingVertical: 10, borderRadius: 6, alignItems: 'center' },
+  modalConfirmText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 11 },
+
+  loginContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  loginCard: { padding: 24, borderRadius: 12, borderWidth: 1, width: '100%', maxWidth: 360 },
+  loginTag: { fontSize: 9, fontWeight: '900', letterSpacing: 2, marginBottom: 6, textAlign: 'center' },
+  loginTitle: { fontSize: 20, fontWeight: '900', marginBottom: 20, textAlign: 'center' },
+  switchButton: { marginTop: 16, alignItems: 'center' },
+  switchButtonText: { fontSize: 12, fontWeight: '700' },
+
+  headerMobile: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  storeTagMobile: { fontSize: 8, fontWeight: '900', letterSpacing: 1, marginBottom: 2 },
+  headerTitleMobile: { fontSize: 16, fontWeight: '900' },
+  headerRightRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  userBadgeHeader: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1 },
+  userBadgeText: { fontSize: 10, fontWeight: 'bold' },
+  addButtonMobile: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
+  logoutButtonMobile: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderWidth: 1 },
+  logoutButtonText: { fontWeight: '900', fontSize: 10 },
+  cancelButton: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1 },
+  cancelButtonText: { color: '#6B7280', fontWeight: 'bold', fontSize: 10 },
+
+  statsContainerMobile: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  statCardMobile: { flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center' },
+  statLabel: { fontSize: 9, fontWeight: 'bold', marginBottom: 4 },
+  statValue: { fontSize: 14, fontWeight: '900' },
+
+  filterSectionCard: { padding: 12, borderRadius: 8, borderWidth: 1, marginBottom: 16, gap: 10 },
+  searchInputMobile: { padding: 10, borderRadius: 6, fontSize: 12, borderWidth: 1 },
+  priceFilterRow: { flexDirection: 'row', gap: 8 },
+  priceInputMobile: { flex: 1, padding: 8, borderRadius: 6, fontSize: 11, borderWidth: 1 },
+  resetButtonMobile: { paddingHorizontal: 12, justifyContent: 'center', borderRadius: 6, borderWidth: 1 },
   resetButtonText: { fontWeight: 'bold', fontSize: 11 },
-  filterAndSortRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 },
-  filterBar: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  filterChipText: { fontSize: 11, fontWeight: 'bold' },
-  sortBar: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  sortChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1 },
+
+  filterBarMobile: { flexDirection: 'row', gap: 6, paddingVertical: 4 },
+  sortBarMobile: { flexDirection: 'row', gap: 6, paddingVertical: 4 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1 },
+  filterChipText: { fontSize: 10, fontWeight: 'bold' },
+  sortChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
   sortChipText: { fontSize: 10, fontWeight: 'bold' },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 20 },
-  emptyEmoji: { fontSize: 42, marginBottom: 10 },
-  emptyTitle: { fontSize: 16, fontWeight: '900', marginBottom: 4 },
-  emptySubtitle: { fontSize: 12, textAlign: 'center', marginBottom: 16, maxWidth: 350 },
-  emptyResetBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6 },
-  emptyResetText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 11 },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  card: { width: '48.8%', minWidth: 320, flexGrow: 0, borderRadius: 12, padding: 12, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, flexDirection: 'column', gap: 12 },
-  imageWrapper: { width: '100%', height: 180, borderRadius: 8, borderWidth: 1, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
+
+  gridContainerMobile: { flexDirection: 'column', gap: 12 },
+  cardMobile: { width: '100%', borderRadius: 10, padding: 10, borderWidth: 1, flexDirection: 'row', gap: 12 },
+  imageWrapperMobile: { width: 90, height: 90, borderRadius: 6, borderWidth: 1, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
   cardImage: { width: '100%', height: '100%' },
-  cardBody: { flex: 1, justifyContent: 'space-between', gap: 8 },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' },
-  categoryBadge: { fontSize: 9, fontWeight: '900', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden', borderWidth: 1 },
-  stockBadge: { fontSize: 10, fontWeight: '800' },
-  cardTitle: { fontSize: 16, fontWeight: '900', letterSpacing: 0.5 },
-  cardSub: { fontSize: 12, marginTop: 2 },
-  cardDesc: { fontSize: 11, marginTop: 2 },
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  editBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, flex: 1, alignItems: 'center' },
-  deleteBtn: { backgroundColor: 'rgba(220, 38, 38, 0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#FCA5A5', flex: 1, alignItems: 'center' },
-  actionText: { fontSize: 11, fontWeight: '900' },
-  paginationContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 24, gap: 16 },
-  pageButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, borderWidth: 1 },
+  cardBodyMobile: { flex: 1, justifyContent: 'space-between' },
+  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2, alignItems: 'center' },
+  categoryBadge: { fontSize: 8, fontWeight: '900', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3, overflow: 'hidden', borderWidth: 1 },
+  stockBadge: { fontSize: 9, fontWeight: '800' },
+  cardTitleMobile: { fontSize: 14, fontWeight: '900' },
+  cardSubMobile: { fontSize: 11, marginTop: 1 },
+  cardDescMobile: { fontSize: 10, marginTop: 2, color: '#6B7280' },
+  
+  actionRowMobile: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  editBtn: { paddingVertical: 4, borderRadius: 4, borderWidth: 1, flex: 1, alignItems: 'center' },
+  deleteBtn: { backgroundColor: 'rgba(220, 38, 38, 0.05)', paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#FCA5A5', flex: 1, alignItems: 'center' },
+  actionText: { fontSize: 10, fontWeight: '900' },
+
+  paginationContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, gap: 12 },
+  pageButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1 },
   pageButtonDisabled: { opacity: 0.4 },
-  pageButtonText: { fontWeight: 'bold', fontSize: 12 },
-  pageIndicator: { fontSize: 12, fontWeight: 'bold' },
-  formCard: { padding: 32, borderRadius: 12, borderWidth: 1, marginTop: 12, maxWidth: 640, alignSelf: 'center', width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16 },
-  label: { fontSize: 11, marginBottom: 8, fontWeight: '900', letterSpacing: 0.5 },
-  categoryPickerRow: { flexDirection: 'row', gap: 10, marginBottom: 18, flexWrap: 'wrap' },
-  catChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 6, borderWidth: 1 },
-  catChipText: { fontSize: 12, fontWeight: 'bold' },
-  input: { padding: 14, borderRadius: 8, fontSize: 14, marginBottom: 18, borderWidth: 1 },
-  previewContainer: { alignItems: 'center', marginBottom: 18 },
-  previewImage: { width: 110, height: 110, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB' },
-  saveButton: { padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
-  saveButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900', letterSpacing: 1 }
+  pageButtonText: { fontWeight: 'bold', fontSize: 11 },
+  pageIndicator: { fontSize: 11, fontWeight: 'bold' },
+
+  formCardMobile: { padding: 16, borderRadius: 10, borderWidth: 1, width: '100%' },
+  label: { fontSize: 10, marginBottom: 6, fontWeight: '900', letterSpacing: 0.5 },
+  categoryPickerRow: { flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' },
+  catChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, borderWidth: 1, flex: 1, alignItems: 'center' },
+  catChipMobile: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderWidth: 1, alignItems: 'center' },
+  catChipText: { fontSize: 11, fontWeight: 'bold' },
+  input: { padding: 10, borderRadius: 6, fontSize: 12, marginBottom: 12, borderWidth: 1 },
+  previewContainer: { alignItems: 'center', marginBottom: 12 },
+  previewImage: { width: 80, height: 80, borderRadius: 6, borderWidth: 1, borderColor: '#E5E7EB' },
+  saveButton: { padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 8 },
+  saveButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900', letterSpacing: 0.5 },
+
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
+  emptyEmoji: { fontSize: 32, marginBottom: 8 },
+  emptyTitle: { fontSize: 14, fontWeight: '900', marginBottom: 2 },
+  emptySubtitle: { fontSize: 11, textAlign: 'center', marginBottom: 12 },
+  emptyResetBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
+  emptyResetText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 10 }
 });
