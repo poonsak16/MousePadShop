@@ -55,16 +55,16 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// 2. POST: เพิ่มสินค้า
+// 2. POST: เพิ่มสินค้า (รองรับ price แล้ว)
 app.post('/api/products', async (req, res) => {
     try {
-        const { name, stock, category, location, image, status, brand, sizes, productCode, orderName } = req.body;
+        const { name, stock, category, location, image, status, brand, sizes, productCode, orderName, price } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
 
         const [rs] = await pool.query(
-            `INSERT INTO products (name, stock, category, location, image, status, brand, sizes, productCode, orderName, lastUpdate) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [name, stock || 0, category || null, location || null, image || null, status || 'Active', brand || null, sizes || null, productCode || null, orderName || null]
+            `INSERT INTO products (name, stock, category, location, image, status, brand, sizes, productCode, orderName, price, lastUpdate) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [name, stock || 0, category || null, location || null, image || null, status || 'Active', brand || null, sizes || null, productCode || null, orderName || null, price || 0]
         );
         return res.status(201).json({ success: true, productId: rs.insertId });
     } catch (e) {
@@ -73,17 +73,17 @@ app.post('/api/products', async (req, res) => {
     }
 });
 
-// 3. PUT: แก้ไขสินค้า
+// 3. PUT: แก้ไขสินค้า (รองรับ price แล้ว)
 app.put('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, stock, category, location, image, status, brand, sizes, productCode, orderName } = req.body;
+        const { name, stock, category, location, image, status, brand, sizes, productCode, orderName, price } = req.body;
         
         if (!name) return res.status(400).json({ error: 'Missing name' });
 
         const [result] = await pool.query(
-            `UPDATE products SET name=?, stock=?, category=?, location=?, image=?, status=?, brand=?, sizes=?, productCode=?, orderName=?, lastUpdate=NOW() WHERE id=?`,
-            [name, stock || 0, category, location, image, status, brand, sizes, productCode, orderName, id]
+            `UPDATE products SET name=?, stock=?, category=?, location=?, image=?, status=?, brand=?, sizes=?, productCode=?, orderName=?, price=?, lastUpdate=NOW() WHERE id=?`,
+            [name, stock || 0, category, location, image, status, brand, sizes, productCode, orderName, price || 0, id]
         );
 
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Product not found' });
